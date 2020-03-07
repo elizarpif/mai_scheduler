@@ -1,16 +1,19 @@
 package cmd
 
 import (
-	"github.com/davecgh/go-spew/spew"
-	"github.com/sirupsen/logrus"
+
 	"io/ioutil"
-	"mai_scheduler/config"
-	"mai_scheduler/utils"
 	"net/http"
 	"net/url"
 	"path"
 	"strconv"
 	"strings"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/sirupsen/logrus"
+
+	"mai_scheduler/config"
+	"mai_scheduler/utils"
 )
 
 type MaiClient struct {

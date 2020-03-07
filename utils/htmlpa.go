@@ -3,8 +3,9 @@ package utils
 import (
 	"errors"
 	"fmt"
-	stack "github.com/golang-collections/collections/stack"
 	"strings"
+
+	stack "github.com/golang-collections/collections/stack"
 )
 
 type St struct {

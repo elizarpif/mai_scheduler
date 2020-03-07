@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/davecgh/go-spew/spew"
+
 	"mai_scheduler/cmd"
 	"mai_scheduler/config"
 )
@@ -26,10 +28,4 @@ func main() {
 
 	schs, _ := service.GetScheduleByGroup(info.Groups[20])
 	spew.Dump(schs)
-
-	//_, err = service.GetSchedule(str)
-	//if err != nil {
-	//	fmt.Println(err)
-	//}
-
 }
