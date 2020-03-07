@@ -2,8 +2,7 @@ package main
 
 import (
 	"fmt"
-	"net/url"
-
+	"github.com/davecgh/go-spew/spew"
 	"mai_scheduler/cmd"
 	"mai_scheduler/config"
 )
@@ -19,17 +18,18 @@ func main() {
 	service.Config = cfg
 	service.InitClient()
 
-	urlParse, err := url.Parse("https://mai.ru/education/schedule")
-	if err != nil{
-		fmt.Println("url!")
-		return
+	info, err := service.GetGroups(8, 3)
+	if err != nil {
+		fmt.Println(err)
 	}
-	query := urlParse.Query()
-	query.Add("department","151")
-	query.Add("course", "3")
+	fmt.Println(info.Groups[20])
 
-	urlParse.RawQuery = query.Encode()
+	schs, _ := service.GetScheduleByGroup(info.Groups[20])
+	spew.Dump(schs)
 
-	service.GetGroupsByInstituteAndCourse(urlParse.String())
+	//_, err = service.GetSchedule(str)
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
 
 }
