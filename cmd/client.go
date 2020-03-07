@@ -1,14 +1,13 @@
 package cmd
 
 import (
-	"fmt"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
+	"mai_scheduler/config"
+	"mai_scheduler/utils"
 	"net/http"
 	"strings"
-
-	"github.com/sirupsen/logrus"
-
-	"mai_scheduler/config"
 )
 
 type MaiClient struct {
@@ -24,35 +23,139 @@ func (s *MaiClient) InitClient() {
 
 }
 
-//   <div class="sc-table-row">
-//   <a class="sc-table-col" href="#fac-3-Институт-№8" role="button" data-toggle="collapse" aria-expanded="false" aria-controls="fac-3-Институт-№8">Институт №8</a>
-//   <div class="sc-table-col">
-//   <div class="sc-table-col-body " id="fac-3-Институт-№8">
-//  <div class="sc-groups">
-// <div class="sc-program">Аспирантура<
-// -  <a class="sc-group-item" href="detail.php?group=М8О-301А-17">М8О-301А-17</a>
+type Info struct {
+	Groups    []string
+	Institute string
+	Course    string
+}
 
-func (s *MaiClient) GetGroupsByInstituteAndCourse(URL string) {
+type ScheduleDay struct {
+	Day   string
+	ScDay string
+	Rows  []*ScheduleRow
+}
+
+type ScheduleRow struct {
+	StartAt    string
+	EndAt      string
+	Lecturer   string
+	LessonType string
+	Title      string
+	Location   string
+}
+
+func (s *MaiClient) GetSchedule(URL string) ([]*ScheduleDay, error) {
 	resp, err := s.Client.Get(URL)
 
 	if err != nil {
 		s.Logger.WithError(err).Error("cannot get schedule")
-		fmt.Println(err)
-		return
+		return nil,err
 	}
 
 	pages, _ := ioutil.ReadAll(resp.Body)
-	//fmt.Println()
 	page := string(pages[:])
-	cutstring := strings.Index(page, `<div class="sc-container">`)
-	rightcut := strings.Index(page, `<!-- block footer -->`)
-	fmt.Println(page[cutstring:rightcut])
+
+	st, err := utils.ParseHtml(page)
+	if st == nil {
+		s.Logger.WithError(err).Error("cannot get schedule")
+		return nil, NewErrNotFound()
+	}
+
+	sts := st.FindAllSt("sc-container")
+
+	schedules := []*ScheduleDay{}
+
+	for _, s := range sts {
+		sctableRow := s.FindSt("sc-table-row")
+
+		days := sctableRow.FindAllValues("sc-table-col sc-day-header sc-blue")
+		if len(days) == 0 {
+			days = sctableRow.FindAllValues("sc-table-col sc-day-header sc-gray")
+		}
+		scday := sctableRow.FindAllValues("sc-day")
+
+		sctableRows := sctableRow.FindAllChildSt("sc-table-row")
+		schRows := make([]*ScheduleRow, 0, len(sctableRows))
+
+		for _, scRow := range sctableRows {
+			timeDur := scRow.FindAllValues("sc-table-col sc-item-time")
+			timeDur = strings.Split(timeDur[0], " &ndash; ")
+
+			lecType := scRow.FindAllValues("sc-table-col sc-item-type")
+			lecTitle := scRow.FindAllValues("sc-title")
+			lecturer := scRow.FindAllValues("sc-lecturer")
+			location := scRow.FindAllValues("sc-table-col sc-item-location")
+
+			sch := &ScheduleRow{
+				StartAt:    timeDur[0],
+				EndAt:      timeDur[1],
+				Lecturer:   strings.Join(lecturer, " "),
+				LessonType: strings.Join(lecType, " "),
+				Title:      strings.Join(lecTitle, " "),
+				Location:   strings.Join(location, " "),
+			}
+			schRows = append(schRows, sch)
+
+		}
+
+		schedule := &ScheduleDay{
+			Day:   strings.Join(days, " "),
+			ScDay: strings.Join(scday, " "),
+			Rows:  schRows,
+		}
+		spew.Dump(schedule)
+
+		schedules = append(schedules, schedule)
+	}
+	return schedules, nil
+
+}
+
+func (s *MaiClient) GetGroupsByInstituteAndCourse(URL string) (*Info, error) {
+	resp, err := s.Client.Get(URL)
+
+	if err != nil {
+		s.Logger.WithError(err).Error("cannot get schedule")
+		return nil, err
+	}
+
+	pages, _ := ioutil.ReadAll(resp.Body)
+	page := string(pages[:])
+
+	st, err := utils.ParseHtml(page)
+	if st == nil {
+		return nil, NewErrNotFound()
+	}
+	st = st.FindSt("sc-container")
+
+	courses := st.FindAllValues("sc-container-header sc-gray")
+	if len(courses) == 0 {
+		return nil, NewErrNotFound()
+	}
+
+	inst := st.FindAllValues("sc-table-col")
+	if len(inst) == 0 {
+		return nil, NewErrNotFound()
+	}
+
+	groups := st.FindAllValues("sc-group-item")
+	if len(groups) == 0 {
+		return nil, NewErrNotFound()
+	}
+	info := &Info{
+		Course:    courses[0],
+		Institute: inst[0],
+		Groups:    groups,
+	}
+	//fmt.Println("course: ", course)
+	//st.Print()
 
 	defer func() {
 		_ = resp.Body.Close()
 	}()
 
-	//_, _ = io.Copy(os.Stdout, resp.Body)
+	return info, nil
+
 }
 func (s *MaiClient) getDepartment(dep int) (int) {
 	deps := s.Config.Departments

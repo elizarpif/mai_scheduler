@@ -77,6 +77,15 @@ func (s *St) FindAllSt(name string) []*St {
 	}
 	return values
 }
+func (s *St) FindAllChildSt(name string) []*St {
+	values := []*St{}
+
+	for _, node := range s.nodes {
+		res := node.FindAllSt(name)
+		values = append(values, res...)
+	}
+	return values
+}
 
 func (s *St) FindAllValues(name string) []string {
 	values := []string{}
@@ -171,10 +180,10 @@ func ParseHtml(html string) (*St, error) {
 
 	if tags.Len() > 0 {
 		for tags.Len() > 0 {
-			fmt.Println(tags.Peek())
+			//fmt.Println(tags.Peek())
 			tags.Pop()
 		}
-		return nil, errors.New("error parsing")
+		return values, errors.New("error parsing")
 	}
 	return values, nil
 }
