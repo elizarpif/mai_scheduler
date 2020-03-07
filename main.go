@@ -20,5 +20,5 @@ func main() {
 	service.Config = cfg
 	service.InitClient()
 
-	telegramBot.TelegramBot(service, os.Getenv("TOKEN"))
+	telegramBot.TelegramBot(service, os.Getenv("BOTTOKEN"))
 }
