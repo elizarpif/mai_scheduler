@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"mai_scheduler/cmd"
-	"mai_scheduler/config"
-	"mai_scheduler/telegramBot"
 	"os"
+
+	"mai_scheduler/config"
+	"mai_scheduler/mai"
+	"mai_scheduler/telegramBot"
 )
 
 func main() {
@@ -15,10 +16,9 @@ func main() {
 		return
 	}
 
-	service := new(cmd.MaiClient)
+	service := new(mai.MaiClient)
 	service.Config = cfg
 	service.InitClient()
-
 
 	telegramBot.TelegramBot(service, os.Getenv("TOKEN"))
 }

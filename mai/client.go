@@ -1,7 +1,6 @@
-package cmd
+package mai
 
 import (
-
 	"io/ioutil"
 	"net/http"
 	"net/url"

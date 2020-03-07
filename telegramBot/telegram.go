@@ -3,18 +3,19 @@ package telegramBot
 import (
 	"fmt"
 	"log"
-	"mai_scheduler/cmd"
 	"reflect"
 	"strings"
 
 	"github.com/go-telegram-bot-api/telegram-bot-api"
+
+	"mai_scheduler/mai"
 )
 
 func msgError(chatID int64, err error) tgbotapi.MessageConfig {
 	return tgbotapi.NewMessage(chatID, err.Error())
 }
 
-func TelegramBot(c *cmd.MaiClient, token string) {
+func TelegramBot(c *mai.MaiClient, token string) {
 
 	fmt.Println("token =", token)
 	bot, err := tgbotapi.NewBotAPI(token)
